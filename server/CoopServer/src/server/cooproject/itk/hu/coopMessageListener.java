@@ -41,6 +41,7 @@ public class coopMessageListener implements WebSocketServerTokenListener {
 		_users = new userManager(this);
 		this._messageHandler = new messenger(_tServer, "CoopProjectServer",
 				"127.0.0.1", "coproject", "objects", this);
+		//this._messageHandler = new messenger(_tServer, "CoopProjectServer");
 	}
 
 	/**

@@ -29,7 +29,8 @@ $(document).ready(function() {
 
 		var chat_messages=$('#chat_messages_ul');
 
-		var ws = new WebSocket("ws://nemgy.itk.ppke.hu:61160");
+//		var ws = new WebSocket("ws://nemgy.itk.ppke.hu:61160");
+		var ws = new WebSocket("ws://localhost:8787");
 		//var objects = new Array();
 		var s = new state();
 
@@ -86,6 +87,10 @@ $(document).ready(function() {
             case "5":
             case 5: //Objektum torlese
 				s.deleteRect(json.message.objId);
+				break;
+			case "6":
+			case 6: //El letrehozasa
+				//TODO: Implement ME!
 				break;
             case "1000":
             case 1000: //CHAT
@@ -241,6 +246,7 @@ $(document).ready(function() {
 	function state(){
 		this.redrawed  = false;
 		this.objects = [];
+		this.edges = [];
 		this.moving = false;
 		this.selection = null;
 		this.fromx = 0;
@@ -250,6 +256,10 @@ $(document).ready(function() {
 		var canvas = $("#canvas");
 		this.width = canvas.width;
 		this.height = canvas.height;
+
+		this.edge1=0;
+		this.edge2=0;
+		this.selector=0;
 
 		//eger lenyomasra megfog egy elemet ha aarra kattintottunk
 		canvas.bind('mousedown', function(e) {
@@ -275,6 +285,23 @@ $(document).ready(function() {
 						alert("torolted az elemet aminek az idja:" + objects[i].id +" ami a kutyat se erdekelte");
 						objects.splice(i,1);
 					}
+					else if($("#mindegy").attr("checked")  != "undefined" && $("#mindegy").attr("checked") == "checked"){
+						// Elkezeles!
+						// TODO: Implement ME!
+						console.log("EDGE MODE!");
+						if(state.selector==0){
+							state.edge1=objects[i];
+							console.log("Edge1:", state.edge1);
+						};
+						if(state.selector==1){
+							state.edge2=objects[i];
+							console.log("Edge2:", state.edge2);
+							// itt kellene berajzolni az elet!
+
+						};
+						state.selector++;
+						state.selector%=2;
+					};
 					return;
 				}
 			}
@@ -344,6 +371,11 @@ $(document).ready(function() {
 
 	state.prototype.addRectangle = function(Rectangle){ //uj elem hozzaadasa
 		this.objects.push(Rectangle);
+		this.redrawed = false;
+	}
+
+	state.prototype.addEdge = function(Edge){
+		this.objects.push(Edge);
 		this.redrawed = false;
 	}
 

@@ -137,6 +137,8 @@ public class messenger {
 			case 5:
 				handleDelete(c,aToken);
 			// Egy chat message. Egyelore csak broadcastoljuk
+			case 6:
+				handleCreateEdge(c,aToken);
 			//
 			case 1000:
 				handleChatMessage(c, aToken);
@@ -229,6 +231,12 @@ public class messenger {
 		}
 	}
 	
+	private void handleCreateEdge(WebSocketConnector c, Token aToken){
+		log.debug("handleCreateEdge " + c.toString() + " - " + aToken);
+		//TODO: Implement ME!
+	}
+
+
 	/**
 	 * Ismeretlen type field a jsonben valaszoljuk a feladonak.
 	 * 
