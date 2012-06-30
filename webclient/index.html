@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>Koop websocket client</title>
+        <link href="js_css/style.css" rel="stylesheet">
+        <link href="js_css/bootstrap/css/bootstrap.css" rel="stylesheet">
+        <link href="js_css/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+        
+        <!-- Hack for IE9 -->
+        <!--[if lt IE 9]>
+            <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        
+    </head>
+    <body>
+        <!-- Menu -->
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="#">KoopWebClient</a>
+                    <div class="nav-collapse">
+                        <ul class="nav">
+                            <li class="active"><a href="#">Home</a></li>
+                        </ul>
+                    </div><!--/.nav-collapse -->
+                </div>
+            </div>
+        </div>
+        <!-- End of Menu -->
+        <!-- Main container -->
+        <div class="container" id="main_container">
+            <div class="row" style="height:100%">
+                <div class="span8" id="canvas_container">
+                    <canvas id="canvas"></canvas>
+                </div>
+				
+			
+				<div class="span4" id="chat_container">
+                    <div id="login_container">
+                        <table id="login_table">
+                            <tr><td>Username:</td> <td><input type="text" name="username" id="username" /></td></tr>
+                            <tr><td>Password:</td> <td><input type="password" name="password" id="password" /></td></tr>
+						</table>
+						<button class="btn btn-primary" id="login_btn">Login</button>
+                    </div>
+
+                    <div id="chat_messages">
+                        <div id="scrollbar1">
+                        <div class="scrollbar"><div class="track"><div class="thumb"><div class="end"></div></div></div></div>
+                        <div class="viewport" id="viewport">
+                            <div class="overview">
+
+                        <ul id="chat_messages_ul">
+
+						</ul>
+                            </div>
+                        </div>
+
+						<div id="chat_input" align="right">
+                            <input type="text" style="right:0;left:0;width:95%;margin-left:5px;" id="chat_input_field">
+							<br/>
+							<button class="btn btn-primary">Send</button>
+						</div>
+					</div>
+                </div>
+            </div>
+
+			<div id="tools">
+				<input type="radio" name="tool" value="move" id="hand" checked="checked" /> <img src="http://www.consang.net/images/a/aa/Hand.gif" alt="kezecske" width=32 height=32 />
+				<input type="radio" name="tool" id="mindegy" value="edge" /> <img src="http://szenyanildiko.hu/wp-content/uploads/2010/08/ceruza-meseje-kiskep.jpg" alt="ceruza" width=32 height=32 />
+				<input type="radio" name="tool" id="create" value="create" /> <img src="http://www.peertrainer.com/gfx/en_us/btn_create.gif" alt="create" width=32 height=32 />
+				<input type="radio" name="tool" id="delete" value="delete" /> <img src="http://png-5.findicons.com/files//icons/753/gnome_desktop/64/gnome_edit_delete.png" width=32 height=32 />
+			</div>
+
+        </div>
+    </div>
+        <!-- End of Main container -->
+        
+            <!-- JavaScripts -->
+            <script src="js_css/jquery.js"></script>
+            <script src="js_css/jquery.tinyscrollbar.js"></script>
+            <script src="js_css/scripts.js"></script>
+            <script src="js_css/bootstrap/js/bootstrap.js"></script>
+            <!-- End of JavaScripts -->
+    </body>
+</html>
+
+
+
+

@@ -1,0 +1,419 @@
+window.onload = function () {
+    document.body.onresize = function () {
+       var canvasNode = document.getElementById('canvas');
+       canvasNode.width = canvasNode.parentNode.clientWidth;
+       canvasNode.height = canvasNode.parentNode.clientHeight;
+       var scrollbarNode = document.getElementById('viewport');
+       $("#viewport").css({"height" : scrollbarNode.parentNode.parentNode.clientHeight});
+       
+    }
+    document.body.onresize();
+};
+
+
+
+$(document).ready(function() {
+
+    $("#login_btn").click(function() {
+        user = $('#username').val();
+		if(user == ""){
+            user = "anonymus" + Math.ceil(Math.random()*100000);
+		}
+        console.log("Username: " + user);
+        
+		window.WebSocket = window.WebSocket || window.MozWebSocket;
+		if (!window.WebSocket) {
+			console.log("Szar a bongeszod!");
+			return;
+		}
+
+		var chat_messages=$('#chat_messages_ul');
+
+		var ws = new WebSocket("ws://nemgy.itk.ppke.hu:61160");
+		//var objects = new Array();
+		var s = new state();
+
+	//ONOPEN
+    ws.onopen = function(){
+        $('#login_container').hide();
+        $('#scrollbar1').tinyscrollbar();
+
+        console.log("succesfull connect");
+        console.log("Sending username");
+        var user_msg={
+            "type":"0",
+            "sender":user
+        }
+        ws.send(JSON.stringify(user_msg));
+    }
+    
+    //ONCLOSE
+    ws.onclose = function(){
+        console.log("connection closed...");
+    }
+    
+    //ONERROR
+    ws.onerror = function(error) {
+        console.log("gondolom baj van");     
+    }
+    
+    //ONMESSAGE
+    ws.onmessage = function (message) {
+        console.log("Got message");
+        try {
+            var json = JSON.parse(message.data);
+			console.log(json.type);
+        } catch (e) {
+            console.log('This doesn\'t look like a valid JSON: ', message.data);
+            return;
+        }
+        switch(json.type){ //mivel nincs sehol ertelmesen osszefoglalva, igy ki kellett lesnem a desktop kliensbol..
+            case "1":
+            case 1:
+                renameobj(json);
+                break; //objektum modositasa
+            case "2":
+            case 2: //Objektum mozgatasa +mentese 
+				newobj(json);
+                break;
+            case "3":
+            case 3: //Objektum letrehozasa ...most akkor ilyen nem erkezik? ilyet csk kuldunk a szervernek? 
+                break;
+            case "4":
+            case 4: //Objektum mozgatasa
+				move(json);
+                break;
+            case "5":
+            case 5: //Objektum torlese
+				s.deleteRect(json.message.objId);
+				break;
+            case "1000":
+            case 1000: //CHAT
+                handleChatMessage(json);
+                break;
+            default: //hiba
+                console.log("Valami nagyon nem jo.. szivas..");
+        }
+        
+        //DEBUG
+        console.log(json);
+    }
+
+
+	var ctx=document.getElementById("canvas").getContext("2d");
+
+	/*function create(json){
+		if(objects[json.message.objId] == undefined ){
+			var color = randomcolor();
+			var x = parseInt(json.message.x);
+			var y = parseInt(json.message.y);
+
+			ctx.fillStyle = color;
+			ctx.fillRect(x,y,json.message.data.length*10+30,30);
+			ctx.fillStyle = "#000000";
+			ctx.font="10px Arial";
+			ctx.fillText(json.message.data,x+15,y+20);
+			var obj = {"x":x,"y":y,"z":json.message.z,"size": json.message.data.length*10+30,"img":ctx.getImageData(x,y,json.message.data.length*10+30,30)};
+			objects[json.message.objId]= obj;
+		}
+	}
+
+	var movearray = new Array();
+	function move(json,save){
+		var temp = objects[json.message.objId];
+		if(temp != undefined){
+			var tmp = movearray[json.message.objId];
+			if(tmp == undefined){
+				ctx.clearRect(temp["x"],temp["y"],temp["size"],30);
+			}
+			else{
+				ctx.clearRect(tmp["x"],tmp["y"],temp["size"],30);
+			}
+			ctx.putImageData(temp["img"],json.message.x,json.message.y);
+			if(save){
+				if(tmp != undefined){
+					delete movearray[json.message.objId];
+				}
+				objects[json.message.objId]["x"]=json.message.x;
+				objects[json.message.objId]["y"]=json.message.y;
+			}
+			else{
+				movearray[json.message.objId]={"x":json.message.x,"y":json.message.y};
+			}
+		}
+	}*/
+
+
+	function move(json){
+		if(!s.containId(json.message.objId)){ //ha uj objektumot crealt valaki akkor lesz ez...
+			var tmp = {"message":{"x":json.message.x,"y":json.message.y,"z": "0","data":"newRectangle","objId":json.message.objId}}; //ez mert szar a rendszer!
+			s.addRectangle(new Rectangle(tmp,randomcolor()));
+		}
+		else{
+			s.moveRect(json);
+		}
+	}
+
+	function newobj(json){
+		if(!s.containId(json.message.objId)){
+			s.addRectangle(new Rectangle(json,randomcolor()));
+		}
+		else{
+		//	s.moveRect(json);
+		}
+	}
+
+    function handleChatMessage(json){
+        chat_messages.append("<li>"+json.sender + ": " + json.message+"</li>")
+        $('#scrollbar1').tinyscrollbar_update('bottom');
+    }
+    
+    function renameobj(json){
+            s.renameRect(json);        
+    }
+
+	$('#chat_input_field').keydown(function(e) {
+        var ts = Math.round((new Date()).getTime() / 1000);
+        if (e.keyCode === 13) {
+            var msg = $(this).val();
+            var chat_msg = {
+                "sender":user,
+                "message":msg,
+                "type":1000,
+                "timestamp":ts
+            }
+            
+            ws.send(JSON.stringify(chat_msg));
+            handleChatMessage(chat_msg);
+            $(this).val('');
+        }
+    });
+  
+	//random color generalo
+	function randomcolor(){
+		var color = "#";
+		for(var i=0;i<6;i += 1){
+			var temp = Math.floor((Math.random() * 15)+1);
+			if(temp>9){
+				switch(temp){
+					case 10: color = color + 'a';break;
+					case 11: color = color + 'b';break;
+					case 12: color = color + 'c';break;
+					case 13: color = color + 'd';break;
+					case 14: color = color + 'e';break;
+					case 15: color = color + 'f';break;
+				}
+			}
+			else{
+				color = color + temp;
+			}
+		}
+		return color;
+	}
+
+	//konstruktor egy objektumunkhoz
+	function Rectangle(json, c){
+
+		this.x = parseInt(json.message.x);
+		this.y = parseInt(json.message.y);
+		this.z = parseInt(json.message.z);
+		this.data = json.message.data;
+		this.id = json.message.objId;
+		this.color = c;
+	}
+
+	//hogy rajzolja ki az objektumot
+	Rectangle.prototype.draw = function() {
+		ctx.fillStyle = this.color;
+        if(!this.data)this.data='undef';
+		ctx.fillRect(this.x, this.y, this.data.length*5+30,30);
+		ctx.fillStyle = "#000000";
+		ctx.fillText(this.data,this.x+13,this.y+20);
+	}
+
+	//az adott pontok az objektum hatarain belul vannak-e?
+	Rectangle.prototype.contains = function(mx, my) {
+		return  (this.x <= mx) && (this.x + this.data.length*5+30 >= mx) && (this.y <= my) && (this.y + 30 >= my);
+	}
+
+
+	// lenyegeben ez az osztaly fogja kezelni a canvas allapotait
+	function state(){
+		this.redrawed  = false;
+		this.objects = [];
+		this.moving = false;
+		this.selection = null;
+		this.fromx = 0;
+		this.fromy = 0;
+
+		var state = this;
+		var canvas = $("#canvas");
+		this.width = canvas.width;
+		this.height = canvas.height;
+
+		//eger lenyomasra megfog egy elemet ha aarra kattintottunk
+		canvas.bind('mousedown', function(e) {
+                        var ts = Math.round((new Date()).getTime() / 1000);
+			var mouse = state.getMouse(e); //eger pozicio lekerese
+			var mx = mouse.x;
+			var my = mouse.y;
+			var objects = state.objects;
+			var l = objects.length;
+			for (var i = l-1; i >= 0; i--) {
+				if (objects[i].contains(mx, my)) {
+					if($("#hand").attr("checked")  != "undefined" && $("#hand").attr("checked") == "checked"){
+						var selected = objects[i];
+						state.fromx = mx - selected.x; //hogy azon a ponton mozgassuk az objektumot ahol megfogtuk, ne pedig mondjuk mindig a sarkat
+						state.fromy = my - selected.y;
+						state.moving = true;
+						state.selection = selected;
+						//state.redrawed = false; 
+					}
+					else if($("#delete").attr("checked")  != "undefined" && $("#delete").attr("checked") == "checked"){
+						state.redrawed = false;
+						ws.send(JSON.stringify({"type": 5,"timestamp":ts,"sender":user,"message":{"objId":objects[i].id}}));
+						alert("torolted az elemet aminek az idja:" + objects[i].id +" ami a kutyat se erdekelte");
+						objects.splice(i,1);
+					}
+					return;
+				}
+			}
+			if($("#create").attr("checked")  != "undefined" && $("#create").attr("checked") == "checked"){
+				ws.send(JSON.stringify({"type": 3,"timestamp":ts,"sender": user,"message":{"data":"newRectangle","x":mx,"y":my,"z":0}}));
+				state.redrawed = false;
+			}
+		});
+
+		canvas.bind('selectstart', function(e) { e.preventDefault(); return false; }); //kettos akttintaskor ne legyen keveredes
+
+		canvas.bind('mousemove', function(e) {
+                        var ts = Math.round((new Date()).getTime() / 1000);
+			if (state.moving){ //ha van megfogva objektum akkor mozog az egerrel
+				var mouse = state.getMouse(e);
+      			state.selection.x = mouse.x - state.fromx;
+				state.selection.y = mouse.y - state.fromy;   
+				state.redrawed = false; //ki kell rajzolni a valtozast
+				ws.send(JSON.stringify({"type": 4,"timestamp":ts,"sender":user,"message":{"objId":state.selection.id,"x":state.selection.x,"y":state.selection.y}})); //mozgatas mentes nelkul
+			}
+		});
+
+		canvas.bind('mouseup', function(e) { 
+                        var ts = Math.round((new Date()).getTime() / 1000);
+			state.moving = false;  //mar nem mozgatjuk tovabb az elemet, lenyegeben elengedtuk
+			if(state.selection){ // de csak ha volt kivalsztva elem
+				ws.send(JSON.stringify({"type": 2,"timestamp":ts,"sender":user,"message":{"objId":state.selection.id,"x":state.selection.x,"y":state.selection.y}})); //mozgatas mentessel
+				state.selection = null; //elengedes
+			}
+		 });
+
+		canvas.bind('dblclick', function(e) {
+                        var ts = Math.round((new Date()).getTime() / 1000);
+			var mouse = state.getMouse(e);
+			var mx = mouse.x;
+			var my = mouse.y;
+			var objects = state.objects;
+			var l = objects.length;
+			for (var i = l-1; i >= 0; i--) {
+				if (objects[i].contains(mx, my)) {
+					//itt kell felugrani az ablaknak
+					var newdata = ""; //ebbe beolvasni az ablakbol a szoveget
+                                        newdata=prompt("Add meg az objektum nevet",objects[i].data)
+					objects[i].data = newdata;
+					ws.send(JSON.stringify({"type":1,"timestamp":ts,"sender":user,"message":{"objId":objects[i].id,"data":newdata}})); //remelem ezt kell
+                                        ws.send(JSON.stringify({"type":2,"timestamp":ts,"sender":user,"message":{"objId":objects[i].id,"x":objects[i].x,"y":objects[i].y}})); //Mert szar
+                                        state.redrawed=false;
+				}
+			}
+
+		});
+
+		this.interval = 30;
+		setInterval(function() { state.draw(); }, state.interval);
+	}
+
+	state.prototype.containId = function(id){ //megmondja, hogy van-e mar olyan id-ju elemunk
+		var objects = this.objects;
+		var le = objects.length;
+		for (var i = le-1; i >= 0; i--) {
+			if(objects[i].id == id){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	state.prototype.addRectangle = function(Rectangle){ //uj elem hozzaadasa
+		this.objects.push(Rectangle);
+		this.redrawed = false;
+	}
+
+	state.prototype.getMouse = function(e){  //eger pozicio meghatarozasa .. rossz
+		var element =document.getElementById('canvas') , offsetX = 0, offsetY = 0, mx, my;
+  
+		if (element.offsetParent !== undefined) {
+			do {
+				offsetX += element.offsetLeft;
+				offsetY += element.offsetTop;
+			} while ((element = element.offsetParent));
+		}
+
+		mx = e.pageX - offsetX;
+		my = e.pageY - offsetY;
+  
+		return {x: mx, y: my};
+	}
+
+	state.prototype.draw = function() { //kirajzolas a canvasra
+		if (!this.redrawed) {
+			var objects = this.objects;
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+			var l = objects.length;
+			for (var i = 0; i < l; i++) {
+				//var obj = objects[i];
+				//if (obj.x > this.width || obj.y > this.height || obj.x + obj.data.length*10+30 < 0 || shape.y + 30 < 0) continue; ha kiment volna az elem a canvasrol, nem vagyok biztos, hogy olyat tudunk, mivel ahhoz le kell huzni az egeret a canvasrol, akkor meg nincs eger move event
+				objects[i].draw();
+			}
+			this.redrawed = true; //nem kell ujra kirajzolni amig nincs valtozas
+		}
+	}
+
+	state.prototype.moveRect = function(json){
+		var objects = this.objects;
+		var len = objects.length
+		for(var i = len-1;i>=0;i--){
+			if(objects[i].id == json.message.objId){
+				objects[i].x = parseInt(json.message.x);
+				objects[i].y = parseInt(json.message.y);
+				this.redrawed = false;
+				return;
+			}
+		}
+	}
+
+	state.prototype.deleteRect = function(id){
+		var objects = this.objects;
+		var len = objects.length
+		for(var i = len-1;i>=0;i--){
+			if(objects[i].id == id){
+				objects.splice(i,1);
+				this.redrawed = false;
+				return;
+			}
+		}
+	}
+        
+        	state.prototype.renameRect = function(json){
+		var objects = this.objects;
+		var len = objects.length
+		for(var i = len-1;i>=0;i--){
+			if(objects[i].id == json.message.objId){
+				objects[i].data = json.message.data;
+				this.redrawed = false;
+				return;
+			}
+		}
+	}
+
+	});
+});
+

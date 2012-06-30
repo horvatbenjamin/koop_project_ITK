@@ -1,0 +1,76 @@
+body,html {
+    height: 100%;
+}
+
+#main_container{
+    display: block;
+    position:absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-top: 60px;
+    margin-bottom: 20px;
+    height: auto;
+}
+
+#canvas_container, #login_container, #chat_container, #chat_messages{
+	border-radius: 10px; 
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	-o-border-radius: 10px;
+	-ms-border-radius: 10px;
+}
+
+#canvas_container{
+    background: #cccccc;
+    height: 100%;
+}
+
+#login_container{
+	background: #ffccff;
+	padding: 10px;
+	padding-bottom: 2px;
+	margin-bottom: 10px;
+}
+
+#chat_messages{
+	margin-top:10px;
+	background: #ffccff;
+	height: 77%;
+}
+
+#chat_container{
+    position: relative;
+    /*background: #cccccc;*/
+    height: 100%;
+}
+
+#chat_input{
+    position: absolute;
+    bottom:0;
+    left: 0;
+    right: 0;
+    width: auto;
+    margin-bottom: 20px;
+}
+
+#tools{
+	padding-left: 25px;
+}
+
+#login_table tbody tr td:first-child {
+	font-weight: bold;
+	text-align: right;
+}
+
+#scrollbar1 { width: auto; clear: both; margin: 20px 0 10px; }
+#scrollbar1 .viewport { width: auto; height: 200px; overflow: hidden; position: relative; }
+#scrollbar1 .overview { list-style: none; position: absolute; left: 0; top: 0; }
+#scrollbar1 .thumb .end,
+#scrollbar1 .thumb { background-color: #003D5D; }
+#scrollbar1 .scrollbar { position: relative; float: right; width: 15px; }
+#scrollbar1 .track { background-color: #D8EEFD; height: 100%; width:13px; position: relative; padding: 0 1px; }
+#scrollbar1 .thumb { height: 20px; width: 13px; cursor: pointer; overflow: hidden; position: absolute; top: 0; }
+#scrollbar1 .thumb .end { overflow: hidden; height: 5px; width: 13px; }
+#scrollbar1 .disable{ display: none; }
