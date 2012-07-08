@@ -136,10 +136,12 @@ public class messenger {
 			// Delete
 			case 5:
 				handleDelete(c,aToken);
-			// Egy chat message. Egyelore csak broadcastoljuk
+				break;
+			// Uj el. Broadcast+mongodb
 			case 6:
 				handleCreateEdge(c,aToken);
-			//
+				break;
+			// Egy chat message. Egyelore csak broadcastoljuk
 			case 1000:
 				handleChatMessage(c, aToken);
 				break;
@@ -211,13 +213,27 @@ public class messenger {
 		// Szerezzuk meg a collectiont
 		DBCollection _c = _mongo.getCollection(this._collection);
 		// legyen inkább az összes:
-		DBCursor cur = _c.find().sort(new BasicDBObject("_id", -1));
+
+		BasicDBObject query_rectangles = new BasicDBObject();
+		query_rectangles.put("data", new BasicDBObject("$ne", "EDGE"));
+
+		BasicDBObject query_edges = new BasicDBObject();
+		query_edges.put("data", "EDGE");
+
+		DBCursor cur = _c.find(query_rectangles).sort(new BasicDBObject("_id", -1));
 		// gyartsunk responsokat, es kuldjuk ki!
 		log.info("Sending welcome packets");
 		while (cur.hasNext()) {
 			Token dResponse = getTokenFromMongoDBObject(cur.next());
 			_tServer.sendToken(c, dResponse);
 		}
+
+		DBCursor cur_edges = _c.find(query_edges).sort(new BasicDBObject("_id", -1));
+		while (cur_edges.hasNext()) {
+			Token dResponse = getEdgeFromMongoDBObject(cur_edges.next());
+			_tServer.sendToken(c, dResponse);
+		}
+
 	}
 
 	/* Handlerek */
@@ -233,6 +249,8 @@ public class messenger {
 	
 	private void handleCreateEdge(WebSocketConnector c, Token aToken){
 		log.debug("handleCreateEdge " + c.toString() + " - " + aToken);
+		this._tServer.broadcastToken(c, aToken);
+		String objId = saveEdge(aToken);
 		//TODO: Implement ME!
 	}
 
@@ -461,6 +479,33 @@ public class messenger {
 
 	}
 
+	private Token getEdgeFromMongoDBObject(DBObject o) {
+		Token r = getMessageBone(6);
+		/*
+		 * Vegulis egyszerusitettem db schemat, mert rohadt szarul van
+		 * implementalva javaban mongodb driver igy ahhoz hogy kiszedjek egy
+		 * array elemet, ki kell szednem az arrayt mint list, vegigiteralni
+		 * rajta, azokbol kiszedni egy basicBsonobjectet, majd azokban nezni
+		 * hogy mi a kulcs, es az ertek
+		 */
+		// log.info("Mongodb row:"+o.toString());
+		Map<String, String> message = new HashMap<String, String>();
+		message.put("objId", o.get("_id").toString()); // a doksi szerint
+														// objId-nek hívjuk az
+														// üzenetben, de a DBben
+														// az objectid-t
+														// kezeljük.
+		if (o.get("data") != null)
+			message.put("data", o.get("data").toString());
+		if (o.get("Rectangle1Id") != null)
+			message.put("Rectangle1Id", o.get("Rectangle1Id").toString());
+		if (o.get("Rectangle2Id") != null)
+			message.put("Rectangle2Id", o.get("Rectangle2Id").toString());
+		r.setMap("message", message);
+		return r;
+
+	}
+
 	/**
 	 * Elmenti az aTokenben talalhato informaciokat az adatbazisba
 	 * 
@@ -517,6 +562,20 @@ public class messenger {
 			return null;
 		}
 	}
+
+	private String saveEdge(Token aToken){
+		DBCollection _c = _mongo.getCollection(this._collection);
+		Map message = aToken.getMap("message");
+		log.info("Saving token message:" + message.toString());
+		String objId = "";
+		BasicDBObject d = new BasicDBObject();
+		d.put("data", "EDGE");
+		d.put("Rectangle1Id", message.get("Rectangle1Id").toString() );
+		d.put("Rectangle2Id", message.get("Rectangle2Id").toString() );
+		_c.insert(d);
+		log.debug("New EDGE successfully inserted: " + d.toString());
+		return d.get("_id").toString();
+	};
 	
 	private boolean deleteObject(Token aToken){
 		DBCollection _c = _mongo.getCollection(this._collection);//
