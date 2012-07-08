@@ -30,7 +30,7 @@ $(document).ready(function() {
 		var chat_messages=$('#chat_messages_ul');
 
 //		var ws = new WebSocket("ws://nemgy.itk.ppke.hu:61160");
-		var ws = new WebSocket("ws://localhost:8787");
+		var ws = new WebSocket("ws://horvatbenjamin.homelinux.net:8787");
 		//var objects = new Array();
 		var s = new state();
 
