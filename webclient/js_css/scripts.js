@@ -93,6 +93,10 @@ $(document).ready(function() {
 				//TODO: Implement ME!
 				newEdge(json);
 				break;
+			case "7":
+			case 7:
+				s.deleteEdge(json);
+				break;
             case "1000":
             case 1000: //CHAT
                 handleChatMessage(json);
@@ -332,7 +336,7 @@ $(document).ready(function() {
 
 		//eger lenyomasra megfog egy elemet ha aarra kattintottunk
 		canvas.bind('mousedown', function(e) {
-                        var ts = Math.round((new Date()).getTime() / 1000);
+            var ts = Math.round((new Date()).getTime() / 1000);
 			var mouse = state.getMouse(e); //eger pozicio lekerese
 			var mx = mouse.x;
 			var my = mouse.y;
@@ -352,6 +356,23 @@ $(document).ready(function() {
 						state.redrawed = false;
 						ws.send(JSON.stringify({"type": 5,"timestamp":ts,"sender":user,"message":{"objId":objects[i].id}}));
 						alert("torolted az elemet aminek az idja:" + objects[i].id +" ami a kutyat se erdekelte");
+						var index = state.edges.length-1;
+						var count = 0;
+						for(var j=0;j<state.edges.length;j++){
+							if(state.edges[j].rectangle1Id == objects[i].id || state.edges[j].rectangle2Id == objects[i].id){
+								var tmp = state.edges[index];
+								state.edges[index] = state.edges[j];
+								state.edges[j] = tmp;
+								edge_delete_json={"type": 7,"timestamp":ts,"sender":user,"message":{"Rectangle1Id":state.edges[j].rectangle1Id,"Rectangle2Id":state.edges[j].rectangle2Id}};
+								ws.send(JSON.stringify(edge_delete_json));
+								index--;
+								count++;
+							}
+							if(j>=index){
+								break;
+							}
+						}
+						state.edges.splice(index+1,count);
 						objects.splice(i,1);
 					}
 					else if($("#mindegy").attr("checked")  != "undefined" && $("#mindegy").attr("checked") == "checked"){
@@ -360,21 +381,42 @@ $(document).ready(function() {
 						if(state.selector==0){
 							state.edge1=objects[i];
 						//	console.log("Edge1:", state.edge1);
-						};
-						if(state.selector==1){
+							state.selector++;
+						}
+						else if(state.selector==1 && objects[i].id != state.edge1.id){
 							state.redrawed = false;
 							state.edge2=objects[i];
 							//console.log("Edge2:", state.edge2);
-							// itt kellene elkuldeni a servernek az uzenetet!
 							edge_json={"type": 6,"timestamp":ts,"sender":user,"message":{"Rectangle1Id":state.edge1.id, "Rectangle2Id":state.edge2.id}};
 							//console.log(edge_json);
 							ws.send(JSON.stringify(edge_json));
-							//TODO: Be kellene toszni az edge tombbe a fost TODO
 							state.edges.push(new Edge(edge_json));
+							state.selector++;
 						};
-						state.selector++;
+						//state.selector++;
 						state.selector%=2;
-					};
+					}
+					else if($("#eraser").attr("checked")  != "undefined" && $("#eraser").attr("checked") == "checked"){
+						if(state.selector==0){
+							state.edge1=objects[i];
+							state.selector++;
+						}
+						else if(state.selector==1 && objects[i].id != state.edge1.id){
+							state.edge2=objects[i];
+							edge_delete_json={"type": 7,"timestamp":ts,"sender":user,"message":{"Rectangle1Id":state.edge1.id,"Rectangle2Id":state.edge2.id}};
+							for(var j = 0;j<state.edges.length;j++){
+								if((state.edges[j].rectangle1Id == state.edge1.id && state.edges[j].rectangle2Id ==state.edge2.id) || (state.edges[j].rectangle2Id == state.edge1.id && state.edges[j].rectangle1Id ==state.edge2.id)){
+									state.edges.splice(j,1);
+									break;
+								}
+							}
+							state.redrawed = false;
+							ws.send(JSON.stringify(edge_delete_json));
+							state.selector++;
+						}
+					//	state.selector++;
+						state.selector%=2;
+					}
 					return;
 				}
 			}
@@ -384,10 +426,10 @@ $(document).ready(function() {
 			}
 		});
 
-		canvas.bind('selectstart', function(e) { e.preventDefault(); return false; }); //kettos akttintaskor ne legyen keveredes
+		canvas.bind('selectstart', function(e) { e.preventDefault(); return false; }); //kettos kattintaskor ne legyen keveredes
 
 		canvas.bind('mousemove', function(e) {
-                        var ts = Math.round((new Date()).getTime() / 1000);
+            var ts = Math.round((new Date()).getTime() / 1000);
 			if (state.moving){ //ha van megfogva objektum akkor mozog az egerrel
 				var mouse = state.getMouse(e);
       			state.selection.x = mouse.x - state.fromx;
@@ -398,7 +440,7 @@ $(document).ready(function() {
 		});
 
 		canvas.bind('mouseup', function(e) { 
-                        var ts = Math.round((new Date()).getTime() / 1000);
+            var ts = Math.round((new Date()).getTime() / 1000);
 			state.moving = false;  //mar nem mozgatjuk tovabb az elemet, lenyegeben elengedtuk
 			if(state.selection){ // de csak ha volt kivalsztva elem
 				ws.send(JSON.stringify({"type": 2,"timestamp":ts,"sender":user,"message":{"objId":state.selection.id,"x":state.selection.x,"y":state.selection.y}})); //mozgatas mentessel
@@ -407,7 +449,7 @@ $(document).ready(function() {
 		 });
 
 		canvas.bind('dblclick', function(e) {
-                        var ts = Math.round((new Date()).getTime() / 1000);
+            var ts = Math.round((new Date()).getTime() / 1000);
 			var mouse = state.getMouse(e);
 			var mx = mouse.x;
 			var my = mouse.y;
@@ -514,12 +556,23 @@ $(document).ready(function() {
 		}
 	}
         
-        	state.prototype.renameRect = function(json){
+    state.prototype.renameRect = function(json){
 		var objects = this.objects;
 		var len = objects.length
 		for(var i = len-1;i>=0;i--){
 			if(objects[i].id == json.message.objId){
 				objects[i].data = json.message.data;
+				this.redrawed = false;
+				return;
+			}
+		}
+	}
+
+	state.prototype.deleteEdge = function(json){
+		var edges = this.edges;
+		for(var j = 0;j<edges.length;j++){
+			if((edges[j].rectangle1Id == json.message.Rectangle1Id && edges[j].rectangle2Id == json.message.Rectangle2Id) || (edges[j].rectangle2Id == json.message.Rectangle1Id && edges[j].rectangle1Id == json.message.Rectangle2Id)){
+				edges.splice(j,1);
 				this.redrawed = false;
 				return;
 			}
