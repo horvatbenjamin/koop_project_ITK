@@ -241,6 +241,15 @@ $(document).ready(function() {
 		return  (this.x <= mx) && (this.x + this.data.length*5+30 >= mx) && (this.y <= my) && (this.y + 30 >= my);
 	}
 
+	function Edge(json){
+		this.rectangle1Id=parseInt(json.message.Rectangle1Id);
+		this.rectangle2Id=parseInt(json.message.Rectangle2Id); 
+	};
+
+	Edge.prototype.draw = function() {
+		// EDGE kirajzolasa
+	};
+
 
 	// lenyegeben ez az osztaly fogja kezelni a canvas allapotait
 	function state(){
@@ -297,7 +306,7 @@ $(document).ready(function() {
 							state.edge2=objects[i];
 							console.log("Edge2:", state.edge2);
 							// itt kellene elkuldeni a servernek az uzenetet!
-							edge_json={"type": 6,"timestamp":ts,"sender":user,"message":{"Edge1Id":state.edge1.id, "Edge2Id":state.edge2.id}};
+							edge_json={"type": 6,"timestamp":ts,"sender":user,"message":{"Rectangle1Id":state.edge1.id, "Rectangle2Id":state.edge2.id}};
 							console.log(edge_json);
 							ws.send(JSON.stringify(edge_json));
 							//TODO: Be kellene toszni az edge tombbe a fost TODO
