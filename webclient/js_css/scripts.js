@@ -91,6 +91,7 @@ $(document).ready(function() {
 			case "6":
 			case 6: //El letrehozasa
 				//TODO: Implement ME!
+				newEdge(json);
 				break;
             case "1000":
             case 1000: //CHAT
@@ -173,8 +174,12 @@ $(document).ready(function() {
         $('#scrollbar1').tinyscrollbar_update('bottom');
     }
     
+	function newEdge(json){
+		s.addEdge(new Edge(json));
+	}
+
     function renameobj(json){
-            s.renameRect(json);        
+        s.renameRect(json);        
     }
 
 	$('#chat_input_field').keydown(function(e) {
@@ -242,12 +247,67 @@ $(document).ready(function() {
 	}
 
 	function Edge(json){
-		this.rectangle1Id=parseInt(json.message.Rectangle1Id);
-		this.rectangle2Id=parseInt(json.message.Rectangle2Id); 
+		this.rectangle1Id=json.message.Rectangle1Id;
+		this.rectangle2Id=json.message.Rectangle2Id; 
 	};
 
-	Edge.prototype.draw = function() {
+	Edge.prototype.draw = function(objects) {
 		// EDGE kirajzolasa
+		var upper = null;
+		var low = null;
+		var counter = 0;
+		var l = objects.length;
+		//console.log(objects);
+		//console.log(this.rectangle1Id,this.rectangle2Id);
+		for (var i = l-1; i >= 0; i--) {
+			if(objects[i].id == this.rectangle1Id){
+				upper = objects[i];
+				counter++;
+			}
+			else if(objects[i].id == this.rectangle2Id){
+				low = objects[i];
+				counter++;
+			}
+			if(counter>=2){
+				break;
+			}
+		}
+		//console.log(upper);
+		//console.log(low);
+		if(upper != null && low != null){
+			ctx.fillStyle = "#000000";
+			ctx.beginPath();
+			//ctx.lineWidth = 10;
+			if(upper.y > low.y){
+				var tmp = upper;
+				upper = low;
+				low = tmp;
+			}
+			if(upper.y+31 < low.y){
+				ctx.moveTo(upper.x+(upper.data.length*5+30)/2,upper.y+30);
+				ctx.lineTo(low.x+(low.data.length*5+30)/2,low.y);
+			}
+			else if(upper.x+upper.data.length*5+31 < low.x){
+				ctx.moveTo(upper.x+(upper.data.length*5+30),upper.y+15);
+				if(low.y > upper.y+23){
+					ctx.lineTo(low.x+(low.data.length*5+30)/2,low.y);
+				}
+				else{
+					ctx.lineTo(low.x,low.y+15);
+				}
+			}
+			else if(upper.x > low.x+low.data.length*5+31){
+				ctx.moveTo(upper.x,upper.y+15);
+				if(low.y > upper.y+23){
+					ctx.lineTo(low.x+(low.data.length*5+30)/2,low.y);
+				}
+				else{
+					ctx.lineTo(low.x+low.data.length*5+30,low.y+15);
+				}
+			}
+			ctx.stroke();
+			ctx.closePath();
+		}
 	};
 
 
@@ -296,20 +356,21 @@ $(document).ready(function() {
 					}
 					else if($("#mindegy").attr("checked")  != "undefined" && $("#mindegy").attr("checked") == "checked"){
 						// Elkezeles!
-						console.log("EDGE MODE!");
+					//	console.log("EDGE MODE!");
 						if(state.selector==0){
 							state.edge1=objects[i];
-							console.log("Edge1:", state.edge1);
+						//	console.log("Edge1:", state.edge1);
 						};
 						if(state.selector==1){
 							state.redrawed = false;
 							state.edge2=objects[i];
-							console.log("Edge2:", state.edge2);
+							//console.log("Edge2:", state.edge2);
 							// itt kellene elkuldeni a servernek az uzenetet!
 							edge_json={"type": 6,"timestamp":ts,"sender":user,"message":{"Rectangle1Id":state.edge1.id, "Rectangle2Id":state.edge2.id}};
-							console.log(edge_json);
+							//console.log(edge_json);
 							ws.send(JSON.stringify(edge_json));
 							//TODO: Be kellene toszni az edge tombbe a fost TODO
+							state.edges.push(new Edge(edge_json));
 						};
 						state.selector++;
 						state.selector%=2;
@@ -387,7 +448,7 @@ $(document).ready(function() {
 	}
 
 	state.prototype.addEdge = function(Edge){
-		this.objects.push(Edge);
+		this.edges.push(Edge);
 		this.redrawed = false;
 	}
 
@@ -420,7 +481,7 @@ $(document).ready(function() {
 			}
 
 			for (var i = 0; i < edges.length; i++){
-				edges[i].draw();
+				edges[i].draw(objects);
 			}
 
 
