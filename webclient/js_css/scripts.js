@@ -410,6 +410,7 @@ $(document).ready(function() {
 	state.prototype.draw = function() { //kirajzolas a canvasra
 		if (!this.redrawed) {
 			var objects = this.objects;
+			var edges = this.edges;
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 			var l = objects.length;
 			for (var i = 0; i < l; i++) {
@@ -417,6 +418,12 @@ $(document).ready(function() {
 				//if (obj.x > this.width || obj.y > this.height || obj.x + obj.data.length*10+30 < 0 || shape.y + 30 < 0) continue; ha kiment volna az elem a canvasrol, nem vagyok biztos, hogy olyat tudunk, mivel ahhoz le kell huzni az egeret a canvasrol, akkor meg nincs eger move event
 				objects[i].draw();
 			}
+
+			for (var i = 0; i < edges.length; i++){
+				edges[i].draw();
+			}
+
+
 			this.redrawed = true; //nem kell ujra kirajzolni amig nincs valtozas
 		}
 	}
