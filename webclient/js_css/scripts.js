@@ -287,17 +287,20 @@ $(document).ready(function() {
 					}
 					else if($("#mindegy").attr("checked")  != "undefined" && $("#mindegy").attr("checked") == "checked"){
 						// Elkezeles!
-						// TODO: Implement ME!
 						console.log("EDGE MODE!");
 						if(state.selector==0){
 							state.edge1=objects[i];
 							console.log("Edge1:", state.edge1);
 						};
 						if(state.selector==1){
+							state.redrawed = false;
 							state.edge2=objects[i];
 							console.log("Edge2:", state.edge2);
-							// itt kellene berajzolni az elet!
-
+							// itt kellene elkuldeni a servernek az uzenetet!
+							edge_json={"type": 6,"timestamp":ts,"sender":user,"message":{"Edge1Id":state.edge1.id, "Edge2Id":state.edge2.id}};
+							console.log(edge_json);
+							ws.send(JSON.stringify(edge_json));
+							//TODO: Be kellene toszni az edge tombbe a fost TODO
 						};
 						state.selector++;
 						state.selector%=2;
