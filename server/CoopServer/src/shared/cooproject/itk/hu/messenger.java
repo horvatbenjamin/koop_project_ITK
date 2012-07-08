@@ -141,6 +141,9 @@ public class messenger {
 			case 6:
 				handleCreateEdge(c,aToken);
 				break;
+			case 7:
+				handleDeleteEdge(c,aToken);
+				break;
 			// Egy chat message. Egyelore csak broadcastoljuk
 			case 1000:
 				handleChatMessage(c, aToken);
@@ -249,11 +252,20 @@ public class messenger {
 	
 	private void handleCreateEdge(WebSocketConnector c, Token aToken){
 		log.debug("handleCreateEdge " + c.toString() + " - " + aToken);
-		this._tServer.broadcastToken(c, aToken);
+		this._tServer.broadcastToken(aToken);
 		String objId = saveEdge(aToken);
-		//TODO: Implement ME!
 	}
 
+	private void handleDeleteEdge(WebSocketConnector c, Token aToken){
+		log.debug("handleDeleteEdge " + c.toString() + " - " + aToken);
+		if(deleteEdgeObject(aToken)){
+			log.debug("Object successfully deleted:" + aToken);
+			//broadcast original message
+			this._tServer.broadcastToken(aToken);
+		}else{
+			log.debug("Error while deleting the object:" + aToken);
+		}
+	};
 
 	/**
 	 * Ismeretlen type field a jsonben valaszoljuk a feladonak.
@@ -610,6 +622,53 @@ public class messenger {
 					+ e.getMessage());
 			return false;
 		}
+	}
+
+	private boolean deleteEdgeObject(Token aToken){
+		DBCollection _c = _mongo.getCollection(this._collection);//
+		Map message = aToken.getMap("message");
+		log.info("Delete EDGEtoken message:" + message.toString());
+
+		try {
+			// Betoltjuk az adatbazisbol
+			BasicDBObject query1 = new BasicDBObject();
+			query1.put("Rectangle1Id", message.get("Rectangle1Id").toString());
+			query1.put("Rectangle2Id", message.get("Rectangle2Id").toString());
+
+			DBObject doc = _c.findOne(query1);
+			
+			
+			if (doc != null ) {
+				log.debug("Object found, let's remove it!");
+				_c.remove(doc);
+				log.debug("Object removed");
+				return true;
+			}
+
+		}catch (Exception e){
+			log.warn("Retrying....");
+		};
+
+		try{
+			BasicDBObject query2 = new BasicDBObject();
+			query2.put("Rectangle1Id", message.get("Rectangle2Id").toString());
+			query2.put("Rectangle2Id", message.get("Rectangle1Id").toString());
+
+			DBObject doc2 = _c.findOne(query2);
+
+			if (doc2 != null ) {
+				log.debug("Object found, let's remove it!");
+				_c.remove(doc2);
+				log.debug("Object removed");
+				return true;
+			}
+			log.debug("Object not found!");
+		} catch (Exception e) {
+			log.warn("Error while deleting EDGE  Error:"
+					+ e.getMessage());
+			return false;
+		}
+		return true;
 	}
 
 }
